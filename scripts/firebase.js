@@ -30,24 +30,116 @@ function onFirebaseReady(){
   }
 }
 
+// OAuth(Google 등) 사용자 여부
+function _isOAuthUser(user){
+  if(!user||!user.providerData)return false;
+  return user.providerData.some(function(p){return p.providerId&&p.providerId!=='password';});
+}
+
 // ===== 프로필 로드 & 앱 진입 =====
 function _loadProfileAndEnter(){
   setCloudStatus('프로필 로딩...');
-  // 이메일 인증 확인
-  if(FB_USER&&FB_USER.email&&!FB_USER.emailVerified){
+  // 이메일/비번 가입자는 이메일 인증 필요 (OAuth는 provider가 이미 인증한 것으로 간주)
+  if(FB_USER&&FB_USER.email&&!FB_USER.emailVerified&&!_isOAuthUser(FB_USER)){
     setCloudStatus('이메일 인증이 필요합니다. 받은 메일의 인증 링크를 클릭 후 다시 로그인하세요.',true);
     FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
     return;
   }
   FB_DB.collection('users').doc(FB_USER.uid).get().then(function(doc){
     if(!doc.exists){
-      // 고아 auth 계정 — 자동 조직 생성 대신 안내 후 로그아웃
+      if(_isOAuthUser(FB_USER)){
+        // OAuth 신규 사용자 → 조직 설정 모달
+        _showOrgSetupModal();
+        return;
+      }
+      // 이메일/비번인데 프로필 없음 = 가입 중 실패한 고아 계정
       setCloudStatus('프로필이 없습니다. 회원가입을 다시 진행해주세요.',true);
       FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
       return;
     }
     _enterApp(doc.data());
   }).catch(function(e){setCloudStatus('프로필 오류: '+e.message,true);});
+}
+
+// ===== Google 로그인 =====
+function cloudLoginGoogle(){
+  if(!FB_AUTH){setCloudStatus('Firebase 미설정',true);return;}
+  var provider=new firebase.auth.GoogleAuthProvider();
+  provider.addScope('email');provider.addScope('profile');
+  setCloudStatus('Google 로그인 창 열림...');
+  FB_AUTH.signInWithPopup(provider).then(function(result){
+    FB_USER=result.user;USE_CLOUD=true;
+    _loadProfileAndEnter();
+  }).catch(function(e){
+    var msg=e.message;
+    if(e.code==='auth/popup-blocked')msg='팝업이 차단되었습니다. 브라우저에서 팝업을 허용해주세요.';
+    else if(e.code==='auth/popup-closed-by-user')msg='로그인이 취소되었습니다.';
+    else if(e.code==='auth/unauthorized-domain')msg='승인되지 않은 도메인입니다. Firebase 콘솔 > Authentication > 승인 도메인을 확인하세요.';
+    else if(e.code==='auth/account-exists-with-different-credential')msg='같은 이메일로 이미 다른 방식으로 가입되어 있습니다.';
+    setCloudStatus(msg,true);
+  });
+}
+
+// ===== 조직 설정 모달 (OAuth 신규 사용자 전용) =====
+function _showOrgSetupModal(){
+  setCloudStatus('');
+  var defaultName=(FB_USER&&FB_USER.displayName)||(FB_USER&&FB_USER.email?FB_USER.email.split('@')[0]:'');
+  var nEl=document.getElementById('osName');if(nEl)nEl.value=defaultName;
+  var oEl=document.getElementById('osOrgName');if(oEl)oEl.value='';
+  var cEl=document.getElementById('osOrgCode');if(cEl)cEl.value='';
+  switchOrgSetupType('new');
+  oM('mOrgSetup');
+}
+
+function switchOrgSetupType(type){
+  document.getElementById('osNewArea').style.display=type==='new'?'block':'none';
+  document.getElementById('osJoinArea').style.display=type==='join'?'block':'none';
+  document.getElementById('osNew').style.background=type==='new'?'rgba(16,185,129,.15)':'var(--bg2)';
+  document.getElementById('osNew').style.color=type==='new'?'var(--green)':'var(--t3)';
+  document.getElementById('osJoin').style.background=type==='join'?'rgba(245,158,11,.15)':'var(--bg2)';
+  document.getElementById('osJoin').style.color=type==='join'?'var(--amber)':'var(--t3)';
+}
+
+function finishOrgSetup(){
+  if(!FB_USER){toast('인증 상태 오류','error');return;}
+  var name=document.getElementById('osName').value.trim();
+  if(!name){toast('이름을 입력하세요','error');return;}
+  var isJoin=document.getElementById('osJoinArea').style.display!=='none';
+  var orgCode=isJoin?document.getElementById('osOrgCode').value.trim().toUpperCase():'';
+  var orgName=isJoin?'':document.getElementById('osOrgName').value.trim();
+  if(isJoin&&orgCode.length<4){toast('조직 코드를 입력하세요','error');return;}
+  var uid=FB_USER.uid;
+  var setupPromise;
+  if(isJoin){
+    setupPromise=FB_DB.collection('organizations').where('orgCode','==',orgCode).get().then(function(snap){
+      if(snap.empty)throw new Error('잘못된 조직 코드입니다.');
+      var orgDoc=snap.docs[0];
+      return FB_DB.collection('users').doc(uid).set({
+        name:name,role:'manager',orgId:orgDoc.id,sites:[],
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function(){return {orgId:orgDoc.id,role:'manager',sites:[]};});
+    });
+  }else{
+    var orgRef=FB_DB.collection('organizations').doc();
+    var code=_genOrgCode();
+    var batch=FB_DB.batch();
+    batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    batch.set(FB_DB.collection('users').doc(uid),{name:name,role:'admin',orgId:orgRef.id,sites:['all'],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    setupPromise=batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all']};});
+  }
+  setupPromise.then(function(p){
+    cM('mOrgSetup');
+    _enterApp({name:name,role:p.role,orgId:p.orgId,sites:p.sites});
+  }).catch(function(e){
+    toast('설정 실패: '+e.message,'error');
+  });
+}
+
+function cancelOrgSetup(){
+  cM('mOrgSetup');
+  if(FB_AUTH)FB_AUTH.signOut();
+  FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
+  setCloudStatus('조직 설정이 취소되었습니다. 다시 로그인해주세요.');
 }
 
 function _genOrgCode(){
