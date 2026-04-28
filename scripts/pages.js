@@ -534,36 +534,39 @@ function rUsers(){
   if(CU.role!=='admin')return;
   var d=gDB();
   if(USE_CLOUD&&FB_DB&&CU_ORG_ID){
-    var orgCodeHtml='<div style="padding:14px;background:linear-gradient(135deg,rgba(6,182,212,.08),rgba(59,130,246,.06));border:1px solid var(--b1);border-radius:var(--r);margin-bottom:14px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
-      +'<div><div style="font-size:12px;font-weight:700;color:var(--cyan);margin-bottom:4px">조직 초대 코드</div>'
-      +'<div style="font-size:10px;color:var(--t3)">팀원에게 이 코드를 공유하면 같은 조직으로 가입됩니다</div></div>'
-      +'<div id="orgCodeDisplay" style="font-family:monospace;font-size:22px;font-weight:900;letter-spacing:6px;color:var(--amber);background:var(--bg1);padding:8px 16px;border-radius:var(--rs);border:1px solid var(--b2)">로딩...</div></div></div>';
-    FB_DB.collection('organizations').doc(CU_ORG_ID).get().then(function(doc){
-      var el=document.getElementById('orgCodeDisplay');
-      if(el&&doc.exists)el.textContent=doc.data().orgCode||'없음';
-    });
-    orgCodeHtml+='<div id="pendingArea"></div>';
-    orgCodeHtml+='<div class="tw" id="cloudUserTable"><div style="text-align:center;padding:20px;color:var(--t3)">사용자 로딩...</div></div>';
-    orgCodeHtml+='<div style="margin-top:12px;padding:12px;background:rgba(59,130,246,.06);border:1px solid var(--b1);border-radius:var(--rs);font-size:11px;color:var(--t2)">'
-      +'<div style="font-weight:600;margin-bottom:4px;color:var(--cyan)">사용 방법</div>'
-      +'1. 위 조직 코드를 팀원에게 공유<br>2. 팀원이 가입 시 "기존 조직 참여" 선택 → 코드 입력<br>3. <strong>승인 대기</strong> 카드에서 현장 배정 → 자동 활성화</div>';
-    document.getElementById('UML').innerHTML=orgCodeHtml;
+    document.getElementById('UML').innerHTML='<div id="pendingArea"></div>'
+      +'<div id="adminInfoArea"></div>'
+      +'<div class="tw" id="cloudUserTable"><div style="text-align:center;padding:20px;color:var(--t3)">사용자 로딩...</div></div>'
+      +'<div style="margin-top:12px;padding:12px;background:rgba(59,130,246,.06);border:1px solid var(--b1);border-radius:var(--rs);font-size:11px;color:var(--t2);line-height:1.7">'
+      +'<div style="font-weight:600;margin-bottom:4px;color:var(--cyan)">권한 안내</div>'
+      +'• <span style="color:#fbbf24">👑 메인관리자</span>: 모든 권한, 다른 관리자 등급 변경 가능<br>'
+      +'• <span style="color:var(--blue)">관리자</span>: 가입 승인, 현장담당 지정 (최대 4명, 메인관리자 포함 총 5명)<br>'
+      +'• <span style="color:var(--green)">현장담당</span>: 배정된 현장만 접근</div>';
     FB_DB.collection('users').where('orgId','==',CU_ORG_ID).get().then(function(snap){
       var users=snap.docs.map(function(doc){var x=doc.data();x.id=doc.id;return x;});
       var pending=users.filter(function(u){return u.status==='pending';});
       var active=users.filter(function(u){return u.status!=='pending';});
+      var adminCount=active.filter(function(u){return u.role==='admin';}).length;
+      var ADMIN_MAX=5;
+      var meIsMain=active.some(function(u){return u.id===FB_USER.uid&&u.isMainAdmin===true;});
+
+      // 관리자 한도 안내 카드
+      var infoArea=document.getElementById('adminInfoArea');
+      var slotColor=adminCount>=ADMIN_MAX?'var(--red)':adminCount>=4?'var(--amber)':'var(--green)';
+      infoArea.innerHTML='<div style="padding:12px 14px;background:linear-gradient(135deg,rgba(59,130,246,.06),rgba(6,182,212,.04));border:1px solid var(--b1);border-radius:var(--r);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'
+        +'<div><div style="font-size:12px;font-weight:700;color:var(--cyan)">관리자 슬롯</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:2px">메인관리자 1명 + 일반 관리자 최대 4명</div></div>'
+        +'<div style="font-family:monospace;font-size:18px;font-weight:900;color:'+slotColor+'">'+adminCount+' / '+ADMIN_MAX+'</div></div>';
 
       // 승인 대기 카드 섹션
       var pendingArea=document.getElementById('pendingArea');
       if(pending.length){
         pendingArea.innerHTML='<div style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(239,68,68,.06));border:1px solid var(--amber);border-radius:var(--r);padding:14px;margin-bottom:14px">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px">⏳ 승인 대기 ('+pending.length+'명)</div>'
+          +'<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px">⏳ 가입 승인 대기 ('+pending.length+'명)</div>'
           +'<div class="gr g2">'+pending.map(function(u){
             return '<div style="background:var(--bg1);border:1px solid var(--b1);border-radius:var(--rs);padding:10px">'
-              +'<div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:8px">'
-              +'<div><div style="font-size:13px;font-weight:700">'+esc(u.name)+'</div>'
-              +'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(u.email||'-')+'</div></div></div>'
+              +'<div style="margin-bottom:8px"><div style="font-size:13px;font-weight:700">'+esc(u.name)+'</div>'
+              +'<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(u.email||'-')+'</div></div>'
               +'<div style="display:flex;gap:4px"><button class="btn bx bg" style="flex:1" onclick="editUserSites(this.dataset.uid)" data-uid="'+esc(u.id)+'">✓ 승인 + 현장 배정</button>'
               +'<button class="btn bx bd" onclick="rejectPendingUser(this.dataset.uid,this.dataset.name)" data-uid="'+esc(u.id)+'" data-name="'+esc(u.name)+'">거절</button></div></div>';
           }).join('')+'</div></div>';
@@ -572,17 +575,43 @@ function rUsers(){
       }
 
       // 활성 사용자 테이블
+      // - mainAdmin: 누구도 등급 변경 불가
+      // - admin: 메인관리자만 등급 변경 가능 (다른 admin은 못 함)
+      // - manager: 모든 admin이 등급 변경 가능 (단, admin 슬롯 여유 있을 때만 admin 승격)
       document.getElementById('cloudUserTable').innerHTML='<div style="font-size:11px;color:var(--t3);margin-bottom:6px">활성 사용자 ('+active.length+'명)</div>'
         +'<table><thead><tr><th>이름</th><th>역할</th><th>배정 현장</th><th>관리</th></tr></thead><tbody>'
         +active.map(function(u){
           var isMe=u.id===FB_USER.uid;
+          var isMain=u.isMainAdmin===true;
           var siteNames=[];
           if(u.role==='admin')siteNames=['전체 현장'];
           else if(u.sites)u.sites.forEach(function(si){var s=d.sites[si];if(s)siteNames.push(s.name);});
-          return '<tr><td style="font-weight:600">'+esc(u.name)+(isMe?' <span style="font-size:9px;color:var(--cyan)">(나)</span>':'')+'</td>'
-            +'<td><select onchange="changeUserRole(this.dataset.uid,this.value)" data-uid="'+esc(u.id)+'" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:4px;font-size:11px"'+(isMe?' disabled':'')+'>'
-              +'<option value="admin"'+(u.role==='admin'?' selected':'')+'>관리자</option>'
-              +'<option value="manager"'+(u.role==='manager'?' selected':'')+'>현장담당</option></select></td>'
+          // 등급 변경 권한 판정
+          // 1) 메인관리자(본인) 등급 변경: 절대 불가
+          // 2) 다른 admin 변경: 메인관리자만 가능
+          // 3) manager 변경: 모든 admin 가능 (단, admin 승격은 슬롯 여유 있을 때)
+          var canChangeRole=false;
+          if(!isMain){
+            if(u.role==='admin') canChangeRole=meIsMain; // 메인관리자만 admin 강등 가능
+            else canChangeRole=true; // manager는 누구나 변경 가능
+          }
+          var adminFull=adminCount>=ADMIN_MAX&&u.role!=='admin';
+          var nameCell='<span style="font-weight:600">'+esc(u.name)+'</span>'
+            +(isMain?' <span title="메인관리자" style="font-size:11px">👑</span>':'')
+            +(isMe?' <span style="font-size:9px;color:var(--cyan)">(나)</span>':'');
+          var roleCell;
+          if(isMain){
+            roleCell='<span class="st stc" style="font-size:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:3px 8px;border-radius:4px;font-weight:700">👑 메인관리자</span>';
+          }else if(canChangeRole){
+            roleCell='<select onchange="changeUserRole(this.dataset.uid,this.value)" data-uid="'+esc(u.id)+'" style="padding:4px 8px;background:var(--bg1);border:1px solid var(--b1);color:var(--t1);border-radius:4px;font-size:11px">'
+              +'<option value="admin"'+(u.role==='admin'?' selected':'')+(adminFull?' disabled':'')+'>관리자'+(adminFull?' (한도)':'')+'</option>'
+              +'<option value="manager"'+(u.role==='manager'?' selected':'')+'>현장담당</option></select>';
+          }else{
+            // 일반 admin이 다른 admin을 본 경우 — 변경 불가, 표시만
+            roleCell='<span class="st stc" style="font-size:10px;color:var(--blue);font-weight:600">관리자 🔒</span>'
+              +'<div style="font-size:9px;color:var(--t3);margin-top:2px">메인관리자만 변경 가능</div>';
+          }
+          return '<tr><td>'+nameCell+'</td><td>'+roleCell+'</td>'
             +'<td style="font-size:11px">'+(siteNames.length?esc(siteNames.join(', ')):'<span style="color:var(--amber)">미배정</span>')+'</td>'
             +'<td>'+(u.role==='manager'?'<button class="btn bx bpu" onclick="editUserSites(this.dataset.uid)" data-uid="'+esc(u.id)+'">현장배정</button>':'<span style="font-size:10px;color:var(--t3)">전체</span>')+'</td></tr>';
         }).join('')+'</tbody></table>';
@@ -609,9 +638,39 @@ function rUsers(){
 function changeUserRole(userId,newRole){
   if(CU.role!=='admin')return;
   if(USE_CLOUD&&FB_DB){
-    FB_DB.collection('users').doc(userId).update({role:newRole,sites:newRole==='admin'?['all']:[]}).then(function(){
-      toast(newRole==='admin'?'관리자로 변경':'현장담당으로 변경','success');rUsers();
-    }).catch(function(e){toast('역할 변경 실패: '+e.message,'error');});
+    // 1) 대상 사용자 + 본인 + 조직 내 admin 수 확인
+    Promise.all([
+      FB_DB.collection('users').doc(userId).get(),
+      FB_DB.collection('users').doc(FB_USER.uid).get(),
+      FB_DB.collection('users').where('orgId','==',CU_ORG_ID).where('role','==','admin').get()
+    ]).then(function(rs){
+      var target=rs[0].exists?rs[0].data():null;
+      var me=rs[1].exists?rs[1].data():null;
+      var adminCount=rs[2].size;
+      var ADMIN_MAX=5;
+      if(!target){toast('사용자 로딩 실패','error');return;}
+      // 메인관리자는 어떤 변경도 차단
+      if(target.isMainAdmin===true){
+        toast('메인관리자의 등급은 변경할 수 없습니다','error');rUsers();return;
+      }
+      // 일반 관리자 강등은 메인관리자만 가능
+      if(target.role==='admin'&&newRole==='manager'){
+        if(!(me&&me.isMainAdmin===true)){
+          toast('관리자 강등은 메인관리자만 가능합니다','error');rUsers();return;
+        }
+      }
+      // manager → admin 승격 시 슬롯 체크
+      if(target.role!=='admin'&&newRole==='admin'){
+        if(adminCount>=ADMIN_MAX){
+          toast('관리자 슬롯이 가득 찼습니다 ('+adminCount+'/'+ADMIN_MAX+')','error');rUsers();return;
+        }
+      }
+      // 통과 — 업데이트
+      var update={role:newRole,sites:newRole==='admin'?['all']:[]};
+      FB_DB.collection('users').doc(userId).update(update).then(function(){
+        toast(newRole==='admin'?'관리자로 승격':'현장담당으로 변경','success');rUsers();
+      }).catch(function(e){toast('역할 변경 실패: '+e.message,'error');});
+    }).catch(function(e){toast('확인 실패: '+e.message,'error');});
   }else{
     var d=gDB();
     for(var i=0;i<d.users.length;i++){
