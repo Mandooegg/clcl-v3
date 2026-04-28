@@ -129,34 +129,40 @@ function finishOrgSetup(){
   if(isJoin&&orgCode.length<4){toast('조직 코드를 입력하세요','error');return;}
   var uid=FB_USER.uid;
   var setupPromise;
-  if(isJoin){
-    setupPromise=FB_DB.collection('organizations').where('orgCode','==',orgCode).get().then(function(snap){
-      if(snap.empty)throw new Error('잘못된 조직 코드입니다.');
-      var orgDoc=snap.docs[0];
-      var email=(FB_USER&&FB_USER.email)||'';
-      return FB_DB.collection('users').doc(uid).set({
-        name:name,email:email,role:'manager',orgId:orgDoc.id,sites:[],
-        status:'pending',
-        createdAt:firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function(){
-        // 관리자에게 신규 가입 알림
-        return FB_DB.collection('orgs/'+orgDoc.id+'/notifications').add({
-          type:'newMember',targetRole:'admin',
-          uid:uid,name:name,email:email,
-          read:false,
+  // 이미 user 문서·orgId가 있으면 신규 조직 생성·참여 차단 (중복 방지)
+  setupPromise=FB_DB.collection('users').doc(uid).get().then(function(existing){
+    if(existing.exists&&existing.data().orgId){
+      var prev=existing.data();
+      throw new Error('이미 "'+(prev.orgId)+'" 조직에 소속되어 있습니다. 로그아웃 후 다시 로그인해주세요.');
+    }
+    if(isJoin){
+      return FB_DB.collection('organizations').where('orgCode','==',orgCode).get().then(function(snap){
+        if(snap.empty)throw new Error('잘못된 조직 코드입니다.');
+        var orgDoc=snap.docs[0];
+        var email=(FB_USER&&FB_USER.email)||'';
+        return FB_DB.collection('users').doc(uid).set({
+          name:name,email:email,role:'manager',orgId:orgDoc.id,sites:[],
+          status:'pending',
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }).then(function(){return {orgId:orgDoc.id,role:'manager',sites:[],status:'pending'};});
-    });
-  }else{
-    var orgRef=FB_DB.collection('organizations').doc();
-    var code=_genOrgCode();
-    var batch=FB_DB.batch();
-    var email2=(FB_USER&&FB_USER.email)||'';
-    batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email2,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    setupPromise=batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
-  }
+        }).then(function(){
+          return FB_DB.collection('orgs/'+orgDoc.id+'/notifications').add({
+            type:'newMember',targetRole:'admin',
+            uid:uid,name:name,email:email,
+            read:false,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }).then(function(){return {orgId:orgDoc.id,role:'manager',sites:[],status:'pending'};});
+      });
+    }else{
+      var orgRef=FB_DB.collection('organizations').doc();
+      var code=_genOrgCode();
+      var batch=FB_DB.batch();
+      var email2=(FB_USER&&FB_USER.email)||'';
+      batch.set(orgRef,{name:orgName||name+'의 조직',orgCode:code,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      batch.set(FB_DB.collection('users').doc(uid),{name:name,email:email2,role:'admin',orgId:orgRef.id,sites:['all'],status:'active',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      return batch.commit().then(function(){return {orgId:orgRef.id,role:'admin',sites:['all'],status:'active'};});
+    }
+  });
   setupPromise.then(function(p){
     cM('mOrgSetup');
     _enterApp({name:name,role:p.role,orgId:p.orgId,sites:p.sites,status:p.status});
@@ -374,28 +380,51 @@ var _cloudSaveTimer=null;
 function saveToCloud(){
   if(!FB_DB||!USE_CLOUD||!FB_USER||!CU_ORG_ID)return;
   if(_cloudSaveTimer)clearTimeout(_cloudSaveTimer);
-  _cloudSaveTimer=setTimeout(function(){_doCloudSave();},2000);
+  // 500ms 디바운스 — 사용자가 페이지 떠나도 데이터 안정성 확보
+  _cloudSaveTimer=setTimeout(function(){_doCloudSave();},500);
 }
 
+// 페이지 unload 직전 동기 저장 시도 (브라우저 닫기 / 새로고침 보호)
+window.addEventListener('beforeunload',function(){
+  if(_cloudSaveTimer){clearTimeout(_cloudSaveTimer);_doCloudSave();}
+});
+
+var _saveErrorShown=false;
 function _doCloudSave(){
   // ⚠️ v2.3: 전체 덤프 방식. v3에서 diff-based로 교체 예정
+  if(!FB_DB||!USE_CLOUD||!CU_ORG_ID){console.warn('[saveToCloud] skipped — missing context');return;}
   var d=gDB();var op='orgs/'+CU_ORG_ID;
+  var promises=[];
+  function err(label){return function(e){
+    console.error('[saveToCloud] '+label+' failed:',e.code,e.message);
+    if(!_saveErrorShown){
+      _saveErrorShown=true;
+      try{toast('⚠️ 클라우드 저장 실패: '+e.message,'error');}catch(_){}
+      setTimeout(function(){_saveErrorShown=false;},5000);
+    }
+    throw e;
+  };}
   for(var si in d.sites){(function(s){
-    FB_DB.collection(op+'/sites').doc(s.id).set({name:s.name,info:s.info},{merge:true});
+    promises.push(FB_DB.collection(op+'/sites').doc(s.id).set({name:s.name,info:s.info},{merge:true}).catch(err('sites/'+s.id)));
     s.buildings.forEach(function(b){var sid=s.id;
-      FB_DB.collection(op+'/buildings').doc(b.id).set({siteId:sid,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0},{merge:true});
+      promises.push(FB_DB.collection(op+'/buildings').doc(b.id).set({siteId:sid,number:b.number,name:b.name,type:b.type,basement:b.basement,floors:b.floors,units:b.units,posX:b.posX||0,posZ:b.posZ||0,rot:b.rot||0},{merge:true}).catch(err('buildings/'+b.id)));
     });
     for(var bi in s.progress)for(var fk in s.progress[bi])for(var u in s.progress[bi][fk]){
       var docId=bi+'__'+fk+'__'+u;
-      FB_DB.collection(op+'/progress').doc(docId).set({siteId:s.id,buildingId:bi,floorKey:fk,unit:u,status:s.progress[bi][fk][u]},{merge:true});
+      promises.push(FB_DB.collection(op+'/progress').doc(docId).set({siteId:s.id,buildingId:bi,floorKey:fk,unit:u,status:s.progress[bi][fk][u]},{merge:true}).catch(err('progress/'+docId)));
     }
   }(d.sites[si]));}
-  d.procRules.forEach(function(r){FB_DB.collection(op+'/procRules').doc(r.id).set({siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active},{merge:true});});
-  d.procOrders.forEach(function(o){FB_DB.collection(op+'/procOrders').doc(o.id).set({siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''},{merge:true});});
-  d.alerts.forEach(function(a){FB_DB.collection(op+'/alerts').doc(a.id).set({siteId:a.siteId,ruleId:a.ruleId||'',material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false},{merge:true});});
-  d.inspections.forEach(function(i){FB_DB.collection(op+'/inspections').doc(i.id).set({siteId:i.siteId,name:i.name,category:i.category,target:i.target||'',vendor:i.vendor||'',date:i.date||'',status:i.status,manager:i.manager||'',location:i.location||'',note:i.note||''},{merge:true});});
+  d.procRules.forEach(function(r){promises.push(FB_DB.collection(op+'/procRules').doc(r.id).set({siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active},{merge:true}).catch(err('procRules/'+r.id)));});
+  d.procOrders.forEach(function(o){promises.push(FB_DB.collection(op+'/procOrders').doc(o.id).set({siteId:o.siteId,material:o.material,orderDate:o.orderDate,status:o.status,manager:o.manager,note:o.note||''},{merge:true}).catch(err('procOrders/'+o.id)));});
+  d.alerts.forEach(function(a){promises.push(FB_DB.collection(op+'/alerts').doc(a.id).set({siteId:a.siteId,ruleId:a.ruleId||'',material:a.material,message:a.message,type:a.type,date:a.date,read:a.read||false},{merge:true}).catch(err('alerts/'+a.id)));});
+  d.inspections.forEach(function(i){promises.push(FB_DB.collection(op+'/inspections').doc(i.id).set({siteId:i.siteId,name:i.name,category:i.category,target:i.target||'',vendor:i.vendor||'',date:i.date||'',status:i.status,manager:i.manager||'',location:i.location||'',note:i.note||''},{merge:true}).catch(err('inspections/'+i.id)));});
   if(d.editHistory&&d.editHistory.length){var h=d.editHistory[0];
-    FB_DB.collection(op+'/editHistory').add({time:h.time,userName:h.user,action:h.action,detail:h.detail,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){});}
+    promises.push(FB_DB.collection(op+'/editHistory').add({time:h.time,userName:h.user,action:h.action,detail:h.detail,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(err('editHistory')));}
+  Promise.allSettled(promises).then(function(results){
+    var failed=results.filter(function(r){return r.status==='rejected';}).length;
+    if(failed===0){console.log('[saveToCloud] ✓ '+results.length+' docs saved');}
+    else{console.warn('[saveToCloud] '+failed+'/'+results.length+' failed');}
+  });
 }
 
 // ===== 사용자 상태 저장/복원 =====
