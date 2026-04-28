@@ -142,13 +142,7 @@ function finishOrgSetup(){
           orgId:orgDoc.id,sites:[],status:'pending',
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
         });
-        var notifRef=FB_DB.collection('orgs/'+orgDoc.id+'/notifications').doc();
-        batch.set(notifRef,{
-          type:'newMember',targetRole:'admin',
-          uid:uid,name:name,email:email,
-          read:false,
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // 알림 문서는 startRealtime onSnapshot으로 대체 (보안 규칙 충돌 방지)
         return batch.commit().then(function(){return {orgId:orgDoc.id,role:'manager',sites:[],status:'pending'};});
       }
     });
@@ -284,18 +278,12 @@ function cloudSignup(){
         return batch.commit().then(function(){return {first:true,orgName:name+'의 조직'};});
       }else{
         // 두번째 이후 = pending manager
+        // 메인관리자/관리자는 startRealtime()의 pending users onSnapshot으로 자동 감지하므로
+        // 별도 notifications 문서 생성 불필요 (보안 규칙 충돌 방지)
         var orgDoc=orgSnap.docs[0];
         batch.set(FB_DB.collection('users').doc(uid),{
           name:name,email:email,role:'manager',isMainAdmin:false,
           orgId:orgDoc.id,sites:[],status:'pending',
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        });
-        // 관리자에게 신규 가입 알림
-        var notifRef=FB_DB.collection('orgs/'+orgDoc.id+'/notifications').doc();
-        batch.set(notifRef,{
-          type:'newMember',targetRole:'admin',
-          uid:uid,name:name,email:email,
-          read:false,
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
         });
         return batch.commit().then(function(){return {first:false,orgName:orgDoc.data().name};});
