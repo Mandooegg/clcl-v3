@@ -41,8 +41,31 @@ function _loadProfileAndEnter(){
   setCloudStatus('프로필 로딩...');
   // 이메일/비번 가입자는 이메일 인증 필요 (OAuth는 provider가 이미 인증한 것으로 간주)
   if(FB_USER&&FB_USER.email&&!FB_USER.emailVerified&&!_isOAuthUser(FB_USER)){
-    setCloudStatus('이메일 인증이 필요합니다. 받은 메일의 인증 링크를 클릭 후 다시 로그인하세요.',true);
-    FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
+    // 인증 메일 자동 재발송 (이전 메일을 못 받은 경우 대비)
+    var u=FB_USER;
+    setCloudStatus('인증 메일을 다시 보내는 중...');
+    u.sendEmailVerification().then(function(){
+      var msg=document.getElementById('cloudStatus');
+      if(msg){
+        msg.innerHTML='<div style="color:var(--amber);font-weight:600;margin-bottom:6px">📧 인증 메일을 ('+u.email+')로 발송했습니다</div>'
+          +'<div style="color:var(--t2);font-size:10px;line-height:1.6;text-align:left">'
+          +'1. <strong>스팸함</strong> 또는 <strong>프로모션</strong> 탭 확인<br>'
+          +'2. 발신자: noreply@site-master-2026.firebaseapp.com<br>'
+          +'3. 제목: "Verify your email..."<br>'
+          +'4. 메일 안의 링크 클릭 후 <strong>이 페이지에서 다시 로그인</strong></div>';
+      }
+    }).catch(function(e){
+      // too-many-requests 등의 에러 케이스
+      var msg=e.code==='auth/too-many-requests'
+        ? '메일 재발송 횟수 초과. 5분 후 다시 시도하거나 이미 받은 메일의 링크를 확인해주세요.'
+        : '이메일 인증이 필요합니다. 메일함(스팸함 포함)을 확인하세요. ('+e.message+')';
+      setCloudStatus(msg,true);
+    }).then(function(){
+      // 어떤 결과든 로그아웃 (다시 로그인하도록)
+      setTimeout(function(){
+        FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
+      },3000);
+    });
     return;
   }
   FB_DB.collection('users').doc(FB_USER.uid).get().then(function(doc){
