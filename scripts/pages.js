@@ -11,16 +11,23 @@ function rDash(){
   if(typeof _loadedSites!=='undefined'&&typeof loadSiteData==='function'){var _ul=Object.keys(d.sites).filter(function(id){return !_loadedSites.has(id);});if(_ul.length){Promise.all(_ul.slice(0,10).map(loadSiteData)).then(rDash);if(_loadedSites.size===0)return;}}
   var ss=gUS();var tb=0,th=0;
   ss.forEach(function(s){tb+=s.buildings.length;s.buildings.forEach(function(b){th+=(b.basement+b.floors)*b.units;});});
-  var avg=ss.length?Math.round(ss.reduce(function(sum,s){return sum+gProg(s.id);},0)/ss.length):0;
-  var als=d.alerts.filter(function(a){return gUS().map(function(s){return s.id;}).indexOf(a.siteId)>=0;});
+  var als=d.alerts.filter(function(a){return ss.map(function(s){return s.id;}).indexOf(a.siteId)>=0;});
   var ur=als.filter(function(a){return !a.read;}).length;
+  var isMulti=CU.role==='admin'&&ss.length>1;
+  var avg=isMulti?0:ss.length?Math.round(ss.reduce(function(sum,s){return sum+gProg(s.id);},0)/ss.length):0;
   var hr=new Date().getHours();
   var greet=hr<9?'좋은 아침이에요!':hr<12?'오전 파이팅!':hr<14?'점심 맛있게 드세요~':hr<18?'오후도 화이팅!':'고생 많으셨어요!';
-  var catMood=avg>=80?'proud':avg>=50?'happy':ur>0?'surprised':'happy';
+  var catMood=ur>0?'surprised':isMulti?'proud':'happy';
   document.getElementById('dashGreet').innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(6,182,212,.06));border:1px solid var(--b1);border-radius:var(--r);margin-bottom:12px">'+catSVG(48,catMood)+'<div><div style="font-size:14px;font-weight:700">'+esc(CU.name)+'님, '+greet+'</div><div style="font-size:11px;color:var(--t2);margin-top:2px">'+(ur>0?'확인할 알림이 '+ur+'건 있어요!':'현장이 순조롭게 진행중이에요 ✨')+'</div></div></div>';
-  document.getElementById('DS').innerHTML='<div class="sc blue"><div class="sl">현장</div><div class="sv">'+ss.length+'</div><div class="ss">개</div></div><div class="sc green"><div class="sl">완료율</div><div class="sv">'+avg+'%</div></div><div class="sc amber"><div class="sl">동수</div><div class="sv">'+tb+'</div><div class="ss">'+th.toLocaleString()+'세대</div></div><div class="sc red"><div class="sl">알림</div><div class="sv">'+ur+'</div><div class="ss">미확인</div></div>';
-  document.getElementById('SP').innerHTML=ss.map(function(s){var p=gProg(s.id);return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:500">'+esc(s.name)+'</span><span style="font-size:12px;color:var(--blue)">'+p+'%</span></div><div class="pb"><div class="pf blue" style="width:'+p+'%"></div></div></div>';}).join('');
-  document.getElementById('RA').innerHTML=als.slice(0,5).map(function(a){return '<div class="ac '+esc(a.type)+'"><div style="font-size:16px">'+(a.type==='urgent'?'🔴':'🔵')+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(a.material)+'</div><div style="font-size:10px;color:var(--t3)">'+esc(a.message)+'</div></div></div>';}).join('')||emptyState('알림이 없어요 🎉');  loadWeather(ss);
+  if(isMulti){
+    document.getElementById('DS').innerHTML='<div class="sc blue"><div class="sl">현장</div><div class="sv">'+ss.length+'</div><div class="ss">개</div></div><div class="sc amber"><div class="sl">총 동수</div><div class="sv">'+tb+'</div><div class="ss">'+th.toLocaleString()+'세대</div></div><div class="sc red"><div class="sl">미확인 알림</div><div class="sv">'+ur+'</div><div class="ss">건</div></div>';
+    document.getElementById('SP').innerHTML=ss.map(function(s){var p=gProg(s.id);var sa=als.filter(function(a){return a.siteId===s.id&&!a.read;}).length;var pc=p>=80?'green':p>=50?'blue':'amber';return '<div style="padding:10px 12px;border:1px solid var(--b1);border-radius:8px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:600">'+esc(s.name)+'</span>'+(sa>0?'<span style="background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;flex-shrink:0">🔔 '+sa+'</span>':'<span style="color:var(--t3);font-size:10px">✅ 이상없음</span>')+'</div><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div class="pb" style="flex:1"><div class="pf '+pc+'" style="width:'+p+'%"></div></div><span style="font-size:11px;color:var(--'+pc+');font-weight:600;min-width:34px;text-align:right">'+p+'%</span></div><div style="font-size:10px;color:var(--t3)">'+s.buildings.length+'동'+(s.info&&s.info.location?' · '+esc(s.info.location):'')+'</div></div>';}).join('')||emptyState('등록된 현장이 없어요');
+  }else{
+    document.getElementById('DS').innerHTML='<div class="sc blue"><div class="sl">현장</div><div class="sv">'+ss.length+'</div><div class="ss">개</div></div><div class="sc green"><div class="sl">완료율</div><div class="sv">'+avg+'%</div></div><div class="sc amber"><div class="sl">동수</div><div class="sv">'+tb+'</div><div class="ss">'+th.toLocaleString()+'세대</div></div><div class="sc red"><div class="sl">알림</div><div class="sv">'+ur+'</div><div class="ss">미확인</div></div>';
+    document.getElementById('SP').innerHTML=ss.map(function(s){var p=gProg(s.id);return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:500">'+esc(s.name)+'</span><span style="font-size:12px;color:var(--blue)">'+p+'%</span></div><div class="pb"><div class="pf blue" style="width:'+p+'%"></div></div></div>';}).join('');
+  }
+  document.getElementById('RA').innerHTML=als.slice(0,5).map(function(a){var sn=(d.sites[a.siteId]&&d.sites[a.siteId].name)||'';return '<div class="ac '+esc(a.type)+'"><div style="font-size:16px">'+(a.type==='urgent'?'🔴':'🔵')+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(a.material)+(sn?'<span style="font-weight:400;color:var(--t3)"> · '+esc(sn)+'</span>':'')+'</div><div style="font-size:10px;color:var(--t3)">'+esc(a.message)+'</div></div></div>';}).join('')||emptyState('알림이 없어요 🎉');
+  loadWeather(ss);
 
 }
 
@@ -38,7 +45,7 @@ function loadWeather(ss){
   var cs=ss&&ss[0];
   if(cs&&cs.info){
     if(cs.info.lat)lat=parseFloat(cs.info.lat);
-    if(cs.info.lon)lon=parseFloat(cs.info.lon);
+    if(cs.info.lng)lon=parseFloat(cs.info.lng);
   }
   wd.innerHTML='<div style="padding:8px 14px;color:var(--t3);font-size:11px">⏳ 날씨 로딩 중...</div>';
   fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul')
@@ -62,7 +69,7 @@ function loadWeather(ss){
       +'</div>'
       +(cs?'<div style="font-size:10px;color:var(--t3);text-align:right;line-height:1.6">'+esc(cs.name)+'<br>현재 날씨</div>':'')
     +'</div>';
-  }).catch(function(){wd.innerHTML='';});
+  })).catch(function(){wd.innerHTML='<div style="padding:6px 14px;color:var(--t3);font-size:11px">🌡️ 날씨 정보를 불러올 수 없어요</div>';});
 }
 
 
