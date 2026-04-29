@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 // ===== 공용 유틸 =====
 // esc: XSS 방지 HTML escape
 // toast/modal: UI 헬퍼
@@ -27,11 +27,11 @@ function toast(m,t){
     setTimeout(function(){try{if(e.parentNode)e.parentNode.removeChild(e)}catch(ex){}},300);
   },3500);
   // 마스코트 반응
-  if(CU){
-    if(t==='success'&&m.indexOf('삭제')>=0)mascotReact('delete',m);
-    else if(t==='success')mascotReact('save',m);
-    else if(t==='error')mascotReact('error',m);
-    else if(t==='warning')mascotReact('alert',m);
+  if(window.CU){
+    if(t==='success'&&m.indexOf('삭제')>=0)window.mascotReact('delete',m);
+    else if(t==='success')window.mascotReact('save',m);
+    else if(t==='error')window.mascotReact('error',m);
+    else if(t==='warning')window.mascotReact('alert',m);
   }
 }
 
@@ -52,11 +52,11 @@ function closeSB(){
 
 // 현재 사용자가 접근 가능한 현장 목록
 function gUS(){
-  var d=gDB();
-  if(CU.role==='admin'){
+  var d=window.gDB();
+  if(window.CU.role==='admin'){
     var r=[];for(var k in d.sites)r.push(d.sites[k]);return r;
   }
-  return CU.sites.map(function(s){return d.sites[s];}).filter(Boolean);
+  return window.CU.sites.map(function(s){return d.sites[s];}).filter(Boolean);
 }
 
 // 셀렉트 박스 채우기 (현장)
@@ -75,7 +75,7 @@ function popSel(keep){
 
 // 셀렉트 박스 채우기 (건물)
 function popBSel(keep){
-  var d=gDB();
+  var d=window.gDB();
   [['v3dS','v3dB'],['prS','prB']].forEach(function(pair){
     var se=document.getElementById(pair[0]),be=document.getElementById(pair[1]);
     if(!se||!be)return;
@@ -92,15 +92,15 @@ function popBSel(keep){
 
 // 수정이력 추가 (최근 100건 유지)
 function addHist(a,dt){
-  var d=gDB();
-  d.editHistory.unshift({time:new Date().toLocaleString('ko-KR'),user:CU.name,action:a,detail:dt});
+  var d=window.gDB();
+  d.editHistory.unshift({time:new Date().toLocaleString('ko-KR'),user:window.CU.name,action:a,detail:dt});
   if(d.editHistory.length>100)d.editHistory.length=100;
-  sDB(d);
+  window.sDB(d);
 }
 
 // 미확인 발주 알림 배지 업데이트
 function updBdg(){
-  var d=gDB(),ss=gUS().map(function(s){return s.id;});
+  var d=window.gDB(),ss=gUS().map(function(s){return s.id;});
   var u=d.alerts.filter(function(a){return ss.indexOf(a.siteId)>=0&&!a.read;}).length;
   var b=document.getElementById('AB');
   b.style.display=u>0?'inline':'none';b.textContent=u;
@@ -108,7 +108,7 @@ function updBdg(){
 
 // 현장 완료율 (%) 계산
 function gProg(si){
-  var d=gDB(),s=d.sites[si];if(!s)return 0;
+  var d=window.gDB(),s=d.sites[si];if(!s)return 0;
   var t=0,dn=0;
   s.buildings.forEach(function(b){
     var p=s.progress[b.id]||{};
@@ -116,3 +116,20 @@ function gProg(si){
   });
   return t>0?Math.round(dn/t*100):0;
 }
+
+// ===== ES Module exports (Phase 2) =====
+// window 할당: 비-모듈 스크립트 (firebase.js, pages.js 등)와 하위 호환
+window.esc=esc;
+window.toast=toast;
+window.cM=cM;
+window.oM=oM;
+window.toggleSB=toggleSB;
+window.closeSB=closeSB;
+window.gUS=gUS;
+window.popSel=popSel;
+window.popBSel=popBSel;
+window.addHist=addHist;
+window.updBdg=updBdg;
+window.gProg=gProg;
+
+export { esc, toast, cM, oM, toggleSB, closeSB, gUS, popSel, popBSel, addHist, updBdg, gProg };
