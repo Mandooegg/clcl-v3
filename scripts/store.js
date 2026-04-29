@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 // ===== LOCAL DATA STORE (localStorage 레이어) =====
 // iDB(): 초기 seed 데이터 생성
 // gDB(): 현재 DB 반환 (메모리 캐시 우선)
@@ -36,5 +36,13 @@ function gDB(){
 function sDB(d){
   _memDB=d;
   try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
-  if(USE_CLOUD)saveToCloud();
+  if(window.USE_CLOUD)window.saveToCloud();
 }
+
+// ===== ES Module exports (Phase 2) =====
+// window 할당: 비-모듈 스크립트 (firebase.js, pages.js 등)와 하위 호환
+window.gDB=gDB;
+window.sDB=sDB;
+window.iDB=iDB;
+
+export { gDB, sDB, iDB };
