@@ -349,7 +349,7 @@ function loadCloudData(){
     d.procRules=[];rs[2].forEach(function(doc){var r=doc.data();d.procRules.push({id:doc.id,siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active});_cloudSnapshot['procRules/'+doc.id]=JSON.stringify({siteId:r.siteId,material:r.material,condFloor:r.condFloor,lead:r.lead,target:r.target,active:r.active});});
     d.editHistory=[];rs[3].forEach(function(doc){var h=doc.data();d.editHistory.push({time:h.time,user:h.userName,action:h.action,detail:h.detail});});
     d.procOrders=d.procOrders||[];d.alerts=d.alerts||[];d.inspections=d.inspections||[];
-    _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+    sDB(d);
     var firstSite=CU&&CU.curSite&&CU.curSite!=='all'?CU.curSite:(Object.keys(d.sites)[0]||null);
     var toLoad=[];
     if(CU&&CU.role!=='admin'&&CU.sites&&CU.sites[0]!=='all'){
@@ -387,7 +387,7 @@ function loadSiteData(siteId){
     rs[4].forEach(function(doc){var i=doc.data();nI.push({id:doc.id,siteId:i.siteId,name:i.name,category:i.category,target:i.target,vendor:i.vendor,date:i.date,status:i.status,manager:i.manager,location:i.location,note:i.note||''});_cloudSnapshot['inspections/'+doc.id]=JSON.stringify({siteId:i.siteId,name:i.name,category:i.category,target:i.target||'',vendor:i.vendor||'',date:i.date||'',status:i.status,manager:i.manager||'',location:i.location||'',note:i.note||''});});
     d.inspections=oI.concat(nI);
     _loadedSites.add(siteId);
-    _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+    sDB(d);
   });
 }
 
@@ -463,7 +463,7 @@ function startRealtime(){
         var d=gDB();var exists=d.alerts.some(function(x){return x.id===a.id;});
         if(!exists){
           d.alerts.unshift({id:a.id,siteId:a.siteId,ruleId:a.ruleId,material:a.material,message:a.message,type:a.type,date:a.date,read:false});
-          _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+          sDB(d);
           updBdg();toast('📦 새 발주알림: '+a.material,'warning');mascotReact('alert',a.material);
           if(CP==='alerts')rAlerts();
         }
@@ -492,7 +492,7 @@ function startRealtime(){
       }else if(ch.type==='removed'){
         d.procOrders=d.procOrders.filter(function(x){return x.id!==o.id;});
       }
-      _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+      sDB(d);
       if(CP==='pstat')rPStat();
     });
   });
@@ -511,7 +511,7 @@ function startRealtime(){
       }else if(ch.type==='removed'){
         d.inspections=d.inspections.filter(function(x){return x.id!==it.id;});
       }
-      _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+      sDB(d);
       if(CP==='insp')rInsp();
     });
   });
