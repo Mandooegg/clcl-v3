@@ -69,7 +69,7 @@ function loadWeather(ss){
       +'</div>'
       +(cs?'<div style="font-size:10px;color:var(--t3);text-align:right;line-height:1.6">'+esc(cs.name)+'<br>현재 날씨</div>':'')
     +'</div>';
-  })).catch(function(){wd.innerHTML='<div style="padding:6px 14px;color:var(--t3);font-size:11px">🌡️ 날씨 정보를 불러올 수 없어요</div>';});
+  }).catch(function(){wd.innerHTML='<div style="padding:6px 14px;color:var(--t3);font-size:11px">🌡️ 날씨 정보를 불러올 수 없어요</div>';});
 }
 
 
