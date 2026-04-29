@@ -33,12 +33,14 @@ document.addEventListener('DOMContentLoaded',function(){
 (function(){
   var s1=document.createElement('script');
   s1.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s1.integrity='sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu';
   s1.crossOrigin='anonymous';
   s1.onerror=function(){console.warn('Three.js unavailable');};
   document.head.appendChild(s1);
 
   var s2=document.createElement('script');
   s2.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s2.integrity='sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw';
   s2.crossOrigin='anonymous';
   s2.onerror=function(){console.warn('XLSX unavailable');};
   document.head.appendChild(s2);
