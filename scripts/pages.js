@@ -111,7 +111,7 @@ function toggleEdit(){
       }
       h+='</div>';
     }
-    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bs bg" onclick="saveSI()">저장</button><button class="btn bs bo" onclick="toggleEdit()">취소</button><<button class="btn bs" onclick="geoLocate()" style="background:var(--cyan);color:#fff;margin-left:auto">📍 좌표 자동입력</button>/div>';
+    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bs bg" onclick="saveSI()">저장</button><button class="btn bs bo" onclick="toggleEdit()">취소</button><button class="btn bs" onclick="geoLocate()" style="background:var(--cyan);color:#fff;margin-left:auto">📍 좌표 자동입력</button></div>';
     e.innerHTML=h;e.style.display='block';v.style.display='none';
   }else{
     e.style.display='none';v.style.display='block';
