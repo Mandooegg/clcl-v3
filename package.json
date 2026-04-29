@@ -1,0 +1,16 @@
+{
+  "name": "clcl-v3",
+  "version": "2.3.0",
+  "description": "SITE-MASTER v2.3 — 건설현장 통합 관리 시스템",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "jsdom": "^24.0.0"
+  }
+}
