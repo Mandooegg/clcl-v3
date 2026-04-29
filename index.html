@@ -294,5 +294,18 @@ Google로 계속하기
 <script src="scripts/auth.js"></script>
 <!-- 9) 엔트리 (DOMContentLoaded + CDN 지연 로드) -->
 <script src="scripts/main.js"></script>
+
+<!-- Service Worker 등록 (Phase 2: 오프라인 캐시) -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      console.log('[SW] 등록 완료:',reg.scope);
+    }).catch(function(e){
+      console.warn('[SW] 등록 실패:',e.message);
+    });
+  });
+}
+</script>
 </body>
 </html>
