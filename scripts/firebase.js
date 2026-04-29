@@ -478,7 +478,45 @@ function startRealtime(){
       }
     });
   });
-  _rtUnsubs=[u1,u2];
+  // procOrders 실시간 동기화 (발주현황)
+  var u4=FB_DB.collection(op+'/procOrders').onSnapshot(function(snap){
+    snap.docChanges().forEach(function(ch){
+      if(!CU)return;
+      var o=ch.doc.data();o.id=ch.doc.id;
+      var d=gDB();
+      if(ch.type==='added'){
+        var exists=d.procOrders.some(function(x){return x.id===o.id;});
+        if(!exists){d.procOrders.unshift(o);}
+      }else if(ch.type==='modified'){
+        for(var i=0;i<d.procOrders.length;i++){if(d.procOrders[i].id===o.id){d.procOrders[i]=o;break;}}
+      }else if(ch.type==='removed'){
+        d.procOrders=d.procOrders.filter(function(x){return x.id!==o.id;});
+      }
+      _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+      if(CP==='pstat')rPStat();
+    });
+  });
+
+  // inspections 실시간 동기화 (공장검수)
+  var u5=FB_DB.collection(op+'/inspections').onSnapshot(function(snap){
+    snap.docChanges().forEach(function(ch){
+      if(!CU)return;
+      var it=ch.doc.data();it.id=ch.doc.id;
+      var d=gDB();
+      if(ch.type==='added'){
+        var exists=d.inspections.some(function(x){return x.id===it.id;});
+        if(!exists){d.inspections.unshift(it);}
+      }else if(ch.type==='modified'){
+        for(var i=0;i<d.inspections.length;i++){if(d.inspections[i].id===it.id){d.inspections[i]=it;break;}}
+      }else if(ch.type==='removed'){
+        d.inspections=d.inspections.filter(function(x){return x.id!==it.id;});
+      }
+      _memDB=d;try{localStorage.setItem(DK,JSON.stringify(d));}catch(e){}
+      if(CP==='insp')rInsp();
+    });
+  });
+
+  _rtUnsubs=[u1,u2,u4,u5];
 
   // 관리자 전용: 신규 가입 신청 실시간 감지
   if(CU&&CU.role==='admin'){
