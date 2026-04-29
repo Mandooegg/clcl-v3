@@ -1,4 +1,6 @@
 "use strict";
+var _histPage=0,_pstatPage=0;
+var HIST_PER_PAGE=20,PSTAT_PER_PAGE=10;
 // ===== 페이지 렌더러 =====
 // 대시보드/현장정보/동설정/시공현황/발주/검수/현장관리/사용자관리/수정이력
 // 각 페이지는 nav() 호출 시 fn 매핑으로 진입
@@ -371,11 +373,19 @@ function rPStat(){
   var d=gDB(),ss=gUS().map(function(s){return s.id;});
   var ords=d.procOrders.filter(function(o){return ss.indexOf(o.siteId)>=0;});
   var users=d.users||[];
-  document.getElementById('PST').innerHTML=ords.map(function(o){
+  var total=ords.length;
+  var totalPages=Math.max(1,Math.ceil(total/PSTAT_PER_PAGE));
+  if(_pstatPage>=totalPages)_pstatPage=totalPages-1;
+  var start=_pstatPage*PSTAT_PER_PAGE;
+  var slice=ords.slice(start,start+PSTAT_PER_PAGE);
+  document.getElementById('PST').innerHTML=slice.map(function(o){
     var s=d.sites[o.siteId];var ci=PS.indexOf(o.status);
     var u=null;users.forEach(function(x){if(x.id===o.manager)u=x;});
-    return '<tr><td>'+esc(s?s.name:'')+'</td><td style="font-weight:600">'+esc(o.material)+'</td><td>'+esc(o.orderDate)+'</td><td><div class="pfl">'+PS.map(function(st,i){return '<span class="ps '+(i<ci?'done':i===ci?'active':'')+'">'+esc(PL[st]||'')+'</span>'+(i<PS.length-1?'<span class="pa">→</span>':'');}).join('')+'</div></td><td>'+esc(u?u.name:o.manager)+'</td><td style="white-space:nowrap">'+(ci<PS.length-1?'<button class="btn bx bg" onclick="advOrd(\''+esc(o.id)+'\')">▶</button> ':'')+(ci>0?'<button class="btn bx bo" onclick="regOrd(\''+esc(o.id)+'\')">◀</button> ':'')+'<button class="btn bx bpu" onclick="editOrd(\''+esc(o.id)+'\')">✏️</button></td></tr>';
+    return '<tr><td>'+esc(s?s.name:'')+'</td><td style="font-weight:600">'+esc(o.material)+'</td><td>'+esc(o.orderDate)+'</td><td><div class="pfl">'+PS.map(function(st,i){return '<span class="ps '+(i<ci?'done':i===ci?'active':'')+'">'+esc(PL[st]||'')+'</span>'+(i<PS.length-1?'<span class="pa">→</span>':'')+'';}).join('')+'</div></td><td>'+esc(u?u.name:o.manager)+'</td><td style="white-space:nowrap">'+(ci<PS.length-1?'<button class="btn bx bg" onclick="advOrd(\''+esc(o.id)+'\')">▶</button> ':'')+( ci>0?'<button class="btn bx bo" onclick="regOrd(\''+esc(o.id)+'\')">◀</button> ':'')+'<button class="btn bx bpu" onclick="editOrd(\''+esc(o.id)+'\')">✏️</button></td></tr>';
   }).join('')||'<tr><td colspan="6">'+emptyState('발주 내역이 없어요')+'</td></tr>';
+  var pgEl=document.getElementById('pstatPager');
+  if(!pgEl){pgEl=document.createElement('div');pgEl.id='pstatPager';var tw=document.querySelector('#pg-pstat .tw');if(tw&&tw.parentNode)tw.parentNode.insertBefore(pgEl,tw.nextSibling);}
+  pgEl.innerHTML=total>PSTAT_PER_PAGE?'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:11px">'+(_pstatPage>0?'<button class="btn bx bo" onclick="_pstatPage--;rPStat()">◀ 이전</button>':'')+'<span style="color:var(--t3)">'+(_pstatPage+1)+'/'+totalPages+'페이지 (총 '+total+'건)</span>'+(_pstatPage<totalPages-1?'<button class="btn bx bo" onclick="_pstatPage++;rPStat()">다음 ▶</button>':'')+'</div>':''; 
 }
 function advOrd(id){var d=gDB();d.procOrders.forEach(function(o){if(o.id===id){var ci=PS.indexOf(o.status);if(ci<PS.length-1){o.status=PS[ci+1];addHist('발주',o.material+': '+PL[o.status]);}}});sDB(d);rPStat();toast('상태 변경','success');}
 function regOrd(id){var d=gDB();d.procOrders.forEach(function(o){if(o.id===id){var ci=PS.indexOf(o.status);if(ci>0)o.status=PS[ci-1];}});sDB(d);rPStat();}
@@ -835,7 +845,15 @@ function rejectPendingUser(userId,userName){
 // ===== 수정이력 =====
 function rHist(){
   var d=gDB();
-  document.getElementById('HL').innerHTML=(d.editHistory||[]).map(function(h){
+  var items=d.editHistory||[];
+  var total=items.length;
+  var totalPages=Math.max(1,Math.ceil(total/HIST_PER_PAGE));
+  if(_histPage>=totalPages)_histPage=totalPages-1;
+  var start=_histPage*HIST_PER_PAGE;
+  var slice=items.slice(start,start+HIST_PER_PAGE);
+  var rows=slice.map(function(h){
     return '<div class="hi"><div style="width:6px;height:6px;border-radius:50%;background:var(--blue);margin-top:4px;flex-shrink:0"></div><div style="flex:1"><div><span style="color:var(--cyan);font-weight:500">'+esc(h.user)+'</span> - '+esc(h.action)+'</div><div style="color:var(--t3);margin-top:1px">'+esc(h.detail)+'</div><div style="color:var(--t3);font-size:9px">'+esc(h.time)+'</div></div></div>';
   }).join('')||emptyState('수정 이력이 없어요');
+  var pager=total>HIST_PER_PAGE?'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:11px">'+(_histPage>0?'<button class="btn bx bo" onclick="_histPage--;rHist()">◀ 이전</button>':'')+'<span style="color:var(--t3)">'+(_histPage+1)+'/'+totalPages+'페이지 (총 '+total+'건)</span>'+(_histPage<totalPages-1?'<button class="btn bx bo" onclick="_histPage++;rHist()">다음 ▶</button>':'')+'</div>':'' ;
+  document.getElementById('HL').innerHTML=rows+pager;
 }
