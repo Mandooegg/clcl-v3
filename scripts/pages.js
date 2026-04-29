@@ -20,7 +20,7 @@ function rDash(){
 
 }
 
-// ===== 현장정보 ====// ===== 날씨 위젯 =====
+// ===== 날씨 위젯 =====
 function loadWeather(ss){
   var wd=document.getElementById('WD');
   if(!wd){
@@ -61,7 +61,8 @@ function loadWeather(ss){
   }).catch(function(){wd.innerHTML='';});
 }
 
-=
+
+// ===== 현장정보 =====
 function rInfo(){
   var ss=gUS();
   if(CU.role==='admin'&&ss.length>1){
