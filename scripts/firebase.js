@@ -515,10 +515,10 @@ function rNotice(){
   if(adminBtn)adminBtn.style.display=CU.role==='admin'?'block':'none';
   document.getElementById('NL').innerHTML='<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">로딩 중...</div>';
   Promise.all([
-    FB_DB.collection('orgs/'+CU_ORG_ID+'/announcements').where('isActive','==',true).orderBy('createdAt','desc').get(),
+    FB_DB.collection('orgs/'+CU_ORG_ID+'/announcements').where('isActive','==',true).get(),
     FB_DB.collection('orgs/'+CU_ORG_ID+'/noticeReads').doc(FB_USER.uid).get()
   ]).then(function(results){
-    _notices=results[0].docs.map(function(d){var x=d.data();x.id=d.id;return x;});
+    _notices=results[0].docs.slice().sort(function(a,b){var ta=a.data().createdAt&&a.data().createdAt.seconds||0;var tb=b.data().createdAt&&b.data().createdAt.seconds||0;return tb-ta;}).map(function(d){var x=d.data();x.id=d.id;return x;});
     _noticeReads=(results[1].exists&&results[1].data().reads)||[];
     var html=_notices.length?_notices.map(function(n){
       var isRead=_noticeReads.indexOf(n.id)>=0;
@@ -537,7 +537,7 @@ function rNotice(){
         '</div>';
     }).join(''):emptyState('공지사항이 없어요 🎉');
     document.getElementById('NL').innerHTML=html;
-  }).catch(function(){document.getElementById('NL').innerHTML='<p style="color:var(--red)">로딩 실패</p>';});
+  }).catch(function(e){document.getElementById('NL').innerHTML='<p style="color:var(--red)">로딩 실패: '+(e&&e.message||e)+'</p>';console.error('[rNotice]',e);});
 }
 
 function openAddNotice(){
