@@ -120,19 +120,26 @@ function toggleEdit(){
 function geoLocate(){
   var el=document.getElementById('e_location');
   if(!el||!el.value.trim()){toast('위치를 먼저 입력하세요','error');return;}
-  toast('좌표 검색 중...','info');
-  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(el.value)+'&format=json&limit=1&countrycodes=kr',{headers:{'Accept-Language':'ko'}})
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data.length){toast('주소를 찾을 수 없어요','error');return;}
-    var lat=parseFloat(data[0].lat).toFixed(6);
-    var lng=parseFloat(data[0].lon).toFixed(6);
-    document.getElementById('e_lat').value=lat;
-    document.getElementById('e_lng').value=lng;
-    toast('📍 좌표 입력 완료 ('+lat+', '+lng+')','success');
-  })
-  .catch(function(){toast('좌표 검색 실패','error');});
+  var tokens=el.value.trim().split(/\s+/);
+  function tryQuery(idx){
+    if(idx<1){toast('주소를 찾을 수 없어요. 시/구/동 이름으로 짧게 입력해보세요','error');return;}
+    var q=tokens.slice(0,idx).join(' ');
+    toast('좌표 검색 중... ('+q+')','info');
+    fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1&countrycodes=kr',{headers:{'Accept-Language':'ko'}})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(!data.length){tryQuery(idx-1);return;}
+      var lat=parseFloat(data[0].lat).toFixed(6);
+      var lng=parseFloat(data[0].lon).toFixed(6);
+      document.getElementById('e_lat').value=lat;
+      document.getElementById('e_lng').value=lng;
+      toast('📍 좌표 입력 완료 ('+lat+', '+lng+')','success');
+    })
+    .catch(function(){tryQuery(idx-1);});
+  }
+  tryQuery(tokens.length);
 }
+
 function saveSI(){
   try{
     var d=gDB(),ss=gUS();
