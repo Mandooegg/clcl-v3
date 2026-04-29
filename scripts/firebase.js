@@ -19,6 +19,10 @@ function onFirebaseReady(){
     firebase.initializeApp(FIREBASE_CONFIG);
     FB_AUTH=firebase.auth();
     FB_DB=firebase.firestore();
+    FB_DB.enablePersistence({synchronizeTabs:true}).catch(function(e){
+      if(e.code==='failed-precondition'){console.warn('[Firestore] 다중 탭: 오프라인 캐시 비활성');}
+      else if(e.code==='unimplemented'){console.warn('[Firestore] 브라우저 오프라인 캐시 미지원');}
+    });
     var cs=document.getElementById('cloudStatus');
     if(cs)cs.innerHTML='<span style="color:var(--green)">✅ Firebase 연결됨</span>';
     FB_AUTH.onAuthStateChanged(function(user){
