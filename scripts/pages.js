@@ -41,39 +41,44 @@ function loadWeather(ss){
     if(!dg)return;
     dg.insertAdjacentElement('afterend',wd);
   }
-  var lat=37.5665,lon=126.9780;
-  var cs=ss&&ss[0];
-  if(cs&&cs.info){
-    if(cs.info.lat)lat=parseFloat(cs.info.lat);
-    if(cs.info.lng)lon=parseFloat(cs.info.lng);
-  }
+  if(!ss||!ss.length){wd.innerHTML='';return;}
   wd.innerHTML='<div style="padding:8px 14px;color:var(--t3);font-size:11px">⏳ 날씨 로딩 중...</div>';
-  fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul')
-  .then(function(r){return r.json();})
-  .then(function(data){
-    var c=data.current,wc=c.weather_code;
-    var icon=wc===0?'☀️':wc<=2?'🌤️':wc<=3?'☁️':wc<=48?'🌫️':wc<=67?'🌧️':wc<=77?'🌨️':wc<=82?'🌦️':wc<=99?'⛈️':'🌡️';
-    var desc=wc===0?'맑음':wc<=2?'구름 조금':wc<=3?'흐림':wc<=48?'안개':wc<=67?'비':wc<=77?'눈':wc<=82?'소나기':'뇌우';
-    wd.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg1);border-radius:8px;border:1px solid var(--b1);margin-bottom:4px">'
-      +'<span style="font-size:28px">'+icon+'</span>'
-      +'<div style="flex:1">'
-        +'<div style="display:flex;align-items:baseline;gap:8px">'
-          +'<span style="font-size:22px;font-weight:700;color:var(--t1)">'+c.temperature_2m+'°C</span>'
-          +'<span style="font-size:12px;color:var(--t2)">'+desc+'</span>'
+  var cards=new Array(ss.length);var done=0;
+  ss.forEach(function(site,i){
+    var lat=37.5665,lon=126.9780;
+    if(site.info){
+      if(site.info.lat)lat=parseFloat(site.info.lat);
+      if(site.info.lng)lon=parseFloat(site.info.lng);
+    }
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var c=data.current,wc=c.weather_code;
+      var icon=wc===0?'☀️':wc<=2?'🌤️':wc<=3?'☁️':wc<=48?'🌫️':wc<=67?'🌧️':wc<=77?'🌨️':wc<=82?'🌦️':wc<=99?'⛈️':'🌡️';
+      var desc=wc===0?'맑음':wc<=2?'구름 조금':wc<=3?'흘림':wc<=48?'안개':wc<=67?'비':wc<=77?'눈':wc<=82?'소나기':'뇌우';
+      cards[i]='<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg1);border-radius:8px;border:1px solid var(--b1);margin-bottom:4px">'
+        +'<span style="font-size:24px">'+icon+'</span>'
+        +'<div style="flex:1">'
+          +(ss.length>1?'<div style="font-size:10px;color:var(--cyan);font-weight:600;margin-bottom:2px">📍 '+esc(site.name)+'</div>':'')
+          +'<div style="display:flex;align-items:baseline;gap:8px">'
+            +'<span style="font-size:20px;font-weight:700;color:var(--t1)">'+c.temperature_2m+'°C</span>'
+            +'<span style="font-size:12px;color:var(--t2)">'+desc+'</span>'
+          +'</div>'
+          +'<div style="font-size:11px;color:var(--t3);margin-top:1px">'
+            +'💧 '+c.relative_humidity_2m+'%'
+            +(c.precipitation>0?'  🌧 '+c.precipitation+'mm':'')
+            +'  💨 '+c.wind_speed_10m+'m/s'
+          +'</div>'
         +'</div>'
-        +'<div style="font-size:11px;color:var(--t3);margin-top:2px">'
-          +'💧 '+c.relative_humidity_2m+'%'
-          +(c.precipitation>0?'  🌧 '+c.precipitation+'mm':'')
-          +'  💨 '+c.wind_speed_10m+'m/s'
-        +'</div>'
-      +'</div>'
-      +(cs?'<div style="font-size:10px;color:var(--t3);text-align:right;line-height:1.6">'+esc(cs.name)+'<br>현재 날씨</div>':'')
-    +'</div>';
-  }).catch(function(){wd.innerHTML='<div style="padding:6px 14px;color:var(--t3);font-size:11px">🌡️ 날씨 정보를 불러올 수 없어요</div>';});
+      +'</div>';
+      done++;if(done===ss.length){wd.innerHTML=cards.join('');}
+    })
+    .catch(function(){
+      cards[i]='';done++;
+      if(done===ss.length){var r=cards.join('');wd.innerHTML=r||'<div style="padding:6px 14px;color:var(--t3);font-size:11px">🌡️ 날씨 정보를 불러올 수 없어요</div>';}
+    });
+  });
 }
-
-
-// ===== 현장정보 =====
 function rInfo(){
   var ss=gUS();
   if(CU.role==='admin'&&ss.length>1){
@@ -106,11 +111,27 @@ function toggleEdit(){
       }
       h+='</div>';
     }
-    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bs bg" onclick="saveSI()">저장</button><button class="btn bs bo" onclick="toggleEdit()">취소</button></div>';
+    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn bs bg" onclick="saveSI()">저장</button><button class="btn bs bo" onclick="toggleEdit()">취소</button><<button class="btn bs" onclick="geoLocate()" style="background:var(--cyan);color:#fff;margin-left:auto">📍 좌표 자동입력</button>/div>';
     e.innerHTML=h;e.style.display='block';v.style.display='none';
   }else{
     e.style.display='none';v.style.display='block';
   }
+}
+function geoLocate(){
+  var el=document.getElementById('e_location');
+  if(!el||!el.value.trim()){toast('위치를 먼저 입력하세요','error');return;}
+  toast('좌표 검색 중...','info');
+  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(el.value)+'&format=json&limit=1&countrycodes=kr',{headers:{'Accept-Language':'ko'}})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data.length){toast('주소를 찾을 수 없어요','error');return;}
+    var lat=parseFloat(data[0].lat).toFixed(6);
+    var lng=parseFloat(data[0].lon).toFixed(6);
+    document.getElementById('e_lat').value=lat;
+    document.getElementById('e_lng').value=lng;
+    toast('📍 좌표 입력 완료 ('+lat+', '+lng+')','success');
+  })
+  .catch(function(){toast('좌표 검색 실패','error');});
 }
 function saveSI(){
   try{
