@@ -3,7 +3,8 @@
  * Phase 2: Vitest 단위 테스트 — utils.js
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { esc, gProg, addHist } from '../scripts/utils.js';
+
+const { esc, gProg, addHist } = globalThis;
 
 // ===== 전역 모킹 (window.CU, window.gDB, window.sDB) =====
 beforeEach(() => {

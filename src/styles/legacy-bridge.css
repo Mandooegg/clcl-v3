@@ -1,0 +1,151 @@
+/* Legacy Bridge CSS - Adapted for Light Theme */
+
+/* Tables */
+.tw {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+thead th {
+  padding: 10px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+  background: var(--bg-surface);
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+tbody tr:hover {
+  background: var(--bg-elevated);
+}
+
+/* Floor Cells */
+.fc {
+  width: 32px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.fc.pending { background: #f1f5f9; color: #94a3b8; }
+.fc.inprogress { background: #fff7ed; color: #ea580c; border-color: #fdba74; }
+.fc.complete { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+
+/* 3D Viewer */
+#v3d {
+  width: 100%;
+  height: 100%;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.vl {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  box-shadow: var(--shadow-md);
+}
+
+.vi {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-main);
+  max-width: 260px;
+  box-shadow: var(--shadow-md);
+}
+
+.v-toolbar {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+
+.v-toolbar button {
+  padding: 4px 12px;
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Inspection Status Badges */
+.isb {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.isb.scheduled { background: #f1f5f9; color: #64748b; }
+.isb.inprogress { background: #fff7ed; color: #ea580c; }
+.isb.pass { background: #f0fdf4; color: #16a34a; }
+.isb.fail { background: #fef2f2; color: #dc2626; }
+
+/* Procurement Flow */
+.pfl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.ps {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.ps.active { background: var(--primary); color: white; }
+.ps.done { background: #16a34a; color: white; }
+.pa { color: #cbd5e1; font-size: 0.6rem; }

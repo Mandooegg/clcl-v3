@@ -22,6 +22,9 @@ var ISI={scheduled:'📅',inprogress:'🔄',pass:'✅',fail:'❌',retest:'🔁'}
 // 현장 최대 개수
 var MAX_SITES=40;
 
+// 로그인 화면 없이 로컬 데모 관리자로 바로 진입 (로컬 개발용)
+var SKIP_LOGIN=true;
+
 // ===== FIREBASE CONFIG =====
 // Firebase 콘솔(console.firebase.google.com)에서 복사하세요
 var FIREBASE_CONFIG={
@@ -43,7 +46,18 @@ var CU_ORG_ID=null;
 
 function isFirebaseConfigured(){return FIREBASE_CONFIG.apiKey!=='YOUR_FIREBASE_API_KEY';}
 
+// file:// 직접 열기·로컬 개발 시 클라우드 대신 로컬 로그인 우선
+function preferLocalLogin(){
+  if(location.protocol==='file:')return true;
+  if(location.hostname==='localhost'||location.hostname==='127.0.0.1')return true;
+  if(/[?&]local=1(?:&|$)/.test(location.search))return true;
+  try{return localStorage.getItem('sm_force_local')==='1';}catch(e){return false;}
+}
+
 // 로그인 모드 스위처
+window.preferLocalLogin=preferLocalLogin;
+window.switchLoginMode=switchLoginMode;
+
 function switchLoginMode(mode){
   document.getElementById('loginCloud').style.display=mode==='cloud'?'block':'none';
   document.getElementById('loginLocal').style.display=mode==='local'?'block':'none';

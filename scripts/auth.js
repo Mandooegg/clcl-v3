@@ -16,25 +16,73 @@ var _lastSunPos={alt:45,az:180};
 // 현재 편집 중인 현장 ID (pages.js의 rInfo/saveSI에서 사용)
 var ceSI=null;
 
-// ===== 로컬 로그인 =====
-function doLogin(){
-  var id=document.getElementById('loginId').value.trim();
-  var pw=document.getElementById('loginPw').value.trim();
-  var d=gDB(),u=null;
-  for(var i=0;i<d.users.length;i++){
-    if(d.users[i].id===id&&d.users[i].pw===pw){u=d.users[i];break;}
+function _findLocalUser(id){
+  if(typeof ensureLocalDemoDB==='function')ensureLocalDemoDB();
+  var d=gDB();
+  if(!d.users||!d.users.length){
+    if(typeof iDB==='function')d=iDB();
+    else return null;
   }
-  if(!u){toast('로그인 실패','error');return;}
-  CU={id:u.id,name:u.name,role:u.role,sites:u.sites,curSite:u.role==='admin'?'all':u.sites[0]};
-  document.getElementById('LP').style.display='none';
-  document.getElementById('AP').style.display='block';
+  var i,u=null;
+  if(id){
+    for(i=0;i<d.users.length;i++){if(d.users[i].id===id){u=d.users[i];break;}}
+  }
+  if(!u)u=d.users[0];
+  return u||null;
+}
+
+function enterAsUser(u,curSite){
+  CU={id:u.id,name:u.name,role:u.role,sites:u.sites,
+    curSite:curSite||(u.role==='admin'?'all':(u.sites&&u.sites[0])||'all')};
+  USE_CLOUD=false;
+  if(typeof FB_AUTH!=='undefined'&&FB_AUTH){try{FB_AUTH.signOut();}catch(e){}}
+  if(typeof FB_USER!=='undefined'){FB_USER=null;}
+  if(typeof CU_ORG_ID!=='undefined'){CU_ORG_ID=null;}
+  var lp=document.getElementById('LP');if(lp)lp.style.display='none';
+  var ps=document.getElementById('pendingScreen');if(ps)ps.style.display='none';
+  var rs=document.getElementById('rejectedScreen');if(rs)rs.style.display='none';
+  var ap=document.getElementById('AP');if(ap)ap.style.display='block';
   setup();
-  toast(u.name+'님 환영합니다! 👷','success');
-  setTimeout(function(){
-    mascotReact('login');setMascotMood('love','jump');
-    showMascotTip('여기 있어요! 👋',u.name+'님 반가워요! 저를 눌러보세요~');
-  },800);
-  resetIdleTimer();
+  if(typeof resetIdleTimer==='function')resetIdleTimer();
+}
+
+// 로그인 없이 데모 관리자(admin)로 바로 진입
+function autoEnterApp(userId){
+  try{
+    if(typeof gDB!=='function'){console.error('[autoEnter] gDB missing');return;}
+    var u=_findLocalUser(userId||'admin');
+    if(!u){toast('데모 사용자를 찾을 수 없습니다','error');return;}
+    enterAsUser(u);
+  }catch(err){
+    console.error('[autoEnter]',err);
+    toast('앱 진입 오류: '+(err&&err.message?err.message:String(err)),'error');
+  }
+}
+
+function doLogin(){
+  try{
+    if(typeof gDB!=='function'){alert('scripts/store.js 로드 실패');return;}
+    var idEl=document.getElementById('loginId');
+    var pwEl=document.getElementById('loginPw');
+    if(!idEl||!pwEl){toast('로그인 폼을 찾을 수 없습니다','error');return;}
+    var id=idEl.value.trim();
+    var pw=pwEl.value;
+    if(!id||!pw){toast('아이디와 비밀번호를 입력하세요','error');return;}
+    var u=null,d=gDB();
+    for(var i=0;i<d.users.length;i++){
+      if(d.users[i].id===id&&d.users[i].pw===pw){u=d.users[i];break;}
+    }
+    if(!u){toast('로그인 실패','error');return;}
+    var siteEl=document.getElementById('loginSite');
+    var picked=siteEl?siteEl.value:null;
+    var curSite=u.role==='admin'?(picked||'all'):u.sites[0];
+    if(picked&&picked!=='all'&&u.sites.indexOf(picked)>=0)curSite=picked;
+    enterAsUser(u,curSite);
+    toast(u.name+'님 환영합니다! 👷','success');
+  }catch(err){
+    console.error('[doLogin]',err);
+    toast('로그인 오류: '+(err&&err.message?err.message:String(err)),'error');
+  }
 }
 
 function doLogout(){
@@ -46,8 +94,11 @@ function doLogout(){
   // 대기/거절 화면 닫기
   var ps=document.getElementById('pendingScreen');if(ps)ps.style.display='none';
   var rs=document.getElementById('rejectedScreen');if(rs)rs.style.display='none';
-  document.getElementById('LP').style.display='flex';
-  document.getElementById('AP').style.display='none';
+  if(typeof SKIP_LOGIN!=='undefined'&&SKIP_LOGIN){autoEnterApp('admin');}
+  else{
+    var lp=document.getElementById('LP');if(lp)lp.style.display='flex';
+    var ap=document.getElementById('AP');if(ap)ap.style.display='none';
+  }
   var mf=document.getElementById('mascotFloat');if(mf)mf.classList.add('hide');
   var mb=document.getElementById('mascotBody');if(mb)mb.innerHTML='';
   if(tAF)cancelAnimationFrame(tAF);
@@ -90,6 +141,13 @@ function nav(p){
   document.getElementById('PB').textContent=t[1];
   var fn={dash:rDash,notice:rNotice,info:rInfo,v3d:init3D,prog:rPT,bldg:rBC,alerts:rAlerts,pset:rPS,pstat:rPStat,insp:rInsp,sites:rSites,users:rUsers,hist:rHist};
   if(fn[p])fn[p]();
-  mascotReact('nav');
-  saveUserState();
+  if(typeof mascotReact==='function')mascotReact('nav');
+  if(typeof saveUserState==='function')saveUserState();
 }
+
+window.autoEnterApp=autoEnterApp;
+window.enterAsUser=enterAsUser;
+window.doLogin=doLogin;
+window.doLogout=doLogout;
+window.setup=setup;
+window.nav=nav;

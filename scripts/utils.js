@@ -117,8 +117,7 @@ function gProg(si){
   return t>0?Math.round(dn/t*100):0;
 }
 
-// ===== ES Module exports (Phase 2) =====
-// window 할당: 비-모듈 스크립트 (firebase.js, pages.js 등)와 하위 호환
+// 전역 노출 (file:// 포함 — 일반 script 로드)
 window.esc=esc;
 window.toast=toast;
 window.cM=cM;
@@ -131,5 +130,3 @@ window.popBSel=popBSel;
 window.addHist=addHist;
 window.updBdg=updBdg;
 window.gProg=gProg;
-
-export { esc, toast, cM, oM, toggleSB, closeSB, gUS, popSel, popBSel, addHist, updBdg, gProg };

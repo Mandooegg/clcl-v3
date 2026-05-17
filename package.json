@@ -1,16 +1,23 @@
 {
   "name": "clcl-v3",
-  "version": "2.3.0",
-  "description": "SITE-MASTER v2.3 — 건설현장 통합 관리 시스템",
+  "version": "3.0.0",
+  "description": "SITE-MASTER v3 — 건설현장 통합 관리 시스템",
   "type": "module",
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "firebase": "^10.11.0",
+    "lucide": "^0.378.0"
   },
   "devDependencies": {
+    "vite": "^5.2.11",
     "vitest": "^1.6.0",
     "@vitest/coverage-v8": "^1.6.0",
     "jsdom": "^24.0.0"
   }
 }
+

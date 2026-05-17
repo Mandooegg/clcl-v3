@@ -26,6 +26,18 @@ function onFirebaseReady(){
     var cs=document.getElementById('cloudStatus');
     if(cs)cs.innerHTML='<span style="color:var(--green)">✅ Firebase 연결됨</span>';
     FB_AUTH.onAuthStateChanged(function(user){
+      if(typeof SKIP_LOGIN!=='undefined'&&SKIP_LOGIN){
+        if(user)FB_AUTH.signOut().catch(function(){});
+        return;
+      }
+      if(!user)return;
+      if(typeof preferLocalLogin==='function'&&preferLocalLogin()&&!CU){
+        FB_AUTH.signOut().catch(function(){});
+        FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
+        var lp=document.getElementById('LP');if(lp)lp.style.display='flex';
+        var ap=document.getElementById('AP');if(ap)ap.style.display='none';
+        return;
+      }
       if(user&&!CU){FB_USER=user;USE_CLOUD=true;_loadProfileAndEnter();}
     });
   }catch(e){
