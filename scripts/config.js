@@ -22,24 +22,4 @@ var ISI={scheduled:'📅',inprogress:'🔄',pass:'✅',fail:'❌',retest:'🔁'}
 // 현장 최대 개수
 var MAX_SITES=40;
 
-// ===== FIREBASE CONFIG =====
-// Firebase 콘솔(console.firebase.google.com)에서 복사하세요
-var FIREBASE_CONFIG={
-  apiKey:'AIzaSyB56X5THX14JAR71Knd3XNzFcSYf8Wt9Rs',
-  authDomain:'site-master-2026.firebaseapp.com',
-  projectId:'site-master-2026',
-  storageBucket:'site-master-2026.firebasestorage.app',
-  messagingSenderId:'677946471168',
-  appId:'1:677946471168:web:7487f5801f6d7ca5e3b9e5',
-  measurementId:'G-9GCR6GL4M0'
-};
-
-// Firebase 런타임 상태
-var FB_AUTH=null;
-var FB_DB=null;
-var FB_USER=null;
-var USE_CLOUD=false;
-var CU_ORG_ID=null;
-
-function isFirebaseConfigured(){return FIREBASE_CONFIG.apiKey!=='YOUR_FIREBASE_API_KEY';}
 

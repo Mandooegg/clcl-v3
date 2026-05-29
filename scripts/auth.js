@@ -40,14 +40,6 @@ document.addEventListener('DOMContentLoaded',function(){
 function enterAsUser(u,curSite){
   CU={id:u.id,name:u.name,role:u.role,sites:u.sites,
     curSite:curSite||(u.role==='admin'?'all':(u.sites&&u.sites[0])||'all')};
-  USE_CLOUD=false;
-  if(typeof FB_AUTH!=='undefined'&&FB_AUTH){try{FB_AUTH.signOut();}catch(e){}}
-  if(typeof FB_USER!=='undefined'){FB_USER=null;}
-  if(typeof CU_ORG_ID!=='undefined'){CU_ORG_ID=null;}
-  var lp=document.getElementById('LP');if(lp)lp.style.display='none';
-  var ps=document.getElementById('pendingScreen');if(ps)ps.style.display='none';
-  var rs=document.getElementById('rejectedScreen');if(rs)rs.style.display='none';
-  var ap=document.getElementById('AP');if(ap)ap.style.display='block';
   setup();
   if(typeof resetIdleTimer==='function')resetIdleTimer();
 }
@@ -66,10 +58,6 @@ function autoEnterApp(userId){
 }
 
 function doLogout(){
-  if(!confirm('로그아웃 하시겠습니까?'))return;
-  stopRealtime();
-  if(typeof _pendingUnsub!=='undefined'&&_pendingUnsub){try{_pendingUnsub();}catch(e){}_pendingUnsub=null;}
-  if(USE_CLOUD&&FB_AUTH){FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;}
   CU=null;closeSB();
   var mf=document.getElementById('mascotFloat');if(mf)mf.classList.add('hide');
   var mb=document.getElementById('mascotBody');if(mb)mb.innerHTML='';
@@ -91,10 +79,7 @@ function setup(){
   var navAdmin=document.getElementById('navAdmin');if(navAdmin)navAdmin.style.display=ia?'block':'none';
   var d=gDB();
   var sn=document.getElementById('SN');if(sn)sn.textContent=ia?'전체 현장 관리':(d.sites[CU.curSite]?d.sites[CU.curSite].name:'');
-  var cb=document.getElementById('cloudBadge');
-  if(cb)cb.style.display=USE_CLOUD?'block':'none';
   popSel();updBdg();
-  if(USE_CLOUD)updNoticeBdg();
   nav('dash');
 }
 
