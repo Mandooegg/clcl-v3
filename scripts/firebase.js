@@ -26,19 +26,7 @@ function onFirebaseReady(){
     var cs=document.getElementById('cloudStatus');
     if(cs)cs.innerHTML='<span style="color:var(--green)">✅ Firebase 연결됨</span>';
     FB_AUTH.onAuthStateChanged(function(user){
-      if(typeof SKIP_LOGIN!=='undefined'&&SKIP_LOGIN){
-        if(user)FB_AUTH.signOut().catch(function(){});
-        return;
-      }
-      if(!user)return;
-      if(typeof preferLocalLogin==='function'&&preferLocalLogin()&&!CU){
-        FB_AUTH.signOut().catch(function(){});
-        FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;
-        var lp=document.getElementById('LP');if(lp)lp.style.display='flex';
-        var ap=document.getElementById('AP');if(ap)ap.style.display='none';
-        return;
-      }
-      if(user&&!CU){FB_USER=user;USE_CLOUD=true;_loadProfileAndEnter();}
+      if(user)FB_AUTH.signOut().catch(function(){});
     });
   }catch(e){
     var cs2=document.getElementById('cloudStatus');
@@ -185,8 +173,6 @@ function _genOrgCode(){
 // 승인 대기 화면 + 실시간 status 변경 감지
 var _pendingUnsub=null;
 function _showPendingScreen(profileData){
-  document.getElementById('LP').style.display='none';
-  document.getElementById('AP').style.display='none';
   var ps=document.getElementById('pendingScreen');
   if(ps)ps.style.display='flex';
   var n=document.getElementById('pendingName');
@@ -218,8 +204,6 @@ function _enterApp(profileData){
   }
   // 거절된 사용자
   if(profileData.status==='rejected'){
-    document.getElementById('LP').style.display='none';
-    document.getElementById('AP').style.display='none';
     var rs=document.getElementById('rejectedScreen');
     if(rs)rs.style.display='flex';
     return;
@@ -229,8 +213,6 @@ function _enterApp(profileData){
     sites:profileData.sites||['all'],
     curSite:profileData.role==='admin'?'all':(profileData.sites||[])[0]||'all'};
   loadCloudData().then(function(){
-    document.getElementById('LP').style.display='none';
-    document.getElementById('AP').style.display='block';
     setup();startRealtime();
     loadUserState().then(function(){
       toast(CU.name+'님 환영합니다! ☁️','success');
@@ -243,8 +225,6 @@ function _enterApp(profileData){
   }).catch(function(e){
     console.error('[enterApp] 데이터 로드 실패:',e);
     toast('데이터 로드 실패: '+e.message+'. 앱 재시작을 권장합니다.','error');
-    document.getElementById('LP').style.display='none';
-    document.getElementById('AP').style.display='block';
     setup();
   });
 }

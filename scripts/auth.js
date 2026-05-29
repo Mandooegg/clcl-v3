@@ -1,8 +1,7 @@
 "use strict";
-// ===== 로컬 인증 + 공통 앱 상태/네비게이션 =====
+// ===== 공통 앱 상태/네비게이션 =====
 // 전역 상태 선언 (3D/뷰어 관련 변수 포함)
-// doLogin/doLogout: 로컬 모드 로그인/로그아웃
-// setup: 로그인 후 UI 초기화
+// setup: 앱 UI 초기화
 // nav: 페이지 전환
 
 // ===== 전역 앱 상태 =====
@@ -30,6 +29,13 @@ function _findLocalUser(id){
   if(!u)u=d.users[0];
   return u||null;
 }
+
+// 페이지 로드 시 자동으로 데모 관리자로 앱 진입
+document.addEventListener('DOMContentLoaded',function(){
+  try{if(typeof ensureLocalDemoDB==='function')ensureLocalDemoDB();}
+  catch(e){try{if(typeof iDB==='function')iDB();}catch(e2){console.error('[store]',e2);}}
+  autoEnterApp('admin');
+});
 
 function enterAsUser(u,curSite){
   CU={id:u.id,name:u.name,role:u.role,sites:u.sites,
@@ -59,50 +65,17 @@ function autoEnterApp(userId){
   }
 }
 
-function doLogin(){
-  try{
-    if(typeof gDB!=='function'){alert('scripts/store.js 로드 실패');return;}
-    var idEl=document.getElementById('loginId');
-    var pwEl=document.getElementById('loginPw');
-    if(!idEl||!pwEl){toast('로그인 폼을 찾을 수 없습니다','error');return;}
-    var id=idEl.value.trim();
-    var pw=pwEl.value;
-    if(!id||!pw){toast('아이디와 비밀번호를 입력하세요','error');return;}
-    var u=null,d=gDB();
-    for(var i=0;i<d.users.length;i++){
-      if(d.users[i].id===id&&d.users[i].pw===pw){u=d.users[i];break;}
-    }
-    if(!u){toast('로그인 실패','error');return;}
-    var siteEl=document.getElementById('loginSite');
-    var picked=siteEl?siteEl.value:null;
-    var curSite=u.role==='admin'?(picked||'all'):u.sites[0];
-    if(picked&&picked!=='all'&&u.sites.indexOf(picked)>=0)curSite=picked;
-    enterAsUser(u,curSite);
-    toast(u.name+'님 환영합니다! 👷','success');
-  }catch(err){
-    console.error('[doLogin]',err);
-    toast('로그인 오류: '+(err&&err.message?err.message:String(err)),'error');
-  }
-}
-
 function doLogout(){
+  if(!confirm('로그아웃 하시겠습니까?'))return;
   stopRealtime();
-  // 승인 대기 구독 정리
   if(typeof _pendingUnsub!=='undefined'&&_pendingUnsub){try{_pendingUnsub();}catch(e){}_pendingUnsub=null;}
   if(USE_CLOUD&&FB_AUTH){FB_AUTH.signOut();FB_USER=null;USE_CLOUD=false;CU_ORG_ID=null;}
   CU=null;closeSB();
-  // 대기/거절 화면 닫기
-  var ps=document.getElementById('pendingScreen');if(ps)ps.style.display='none';
-  var rs=document.getElementById('rejectedScreen');if(rs)rs.style.display='none';
-  if(typeof SKIP_LOGIN!=='undefined'&&SKIP_LOGIN){autoEnterApp('admin');}
-  else{
-    var lp=document.getElementById('LP');if(lp)lp.style.display='flex';
-    var ap=document.getElementById('AP');if(ap)ap.style.display='none';
-  }
   var mf=document.getElementById('mascotFloat');if(mf)mf.classList.add('hide');
   var mb=document.getElementById('mascotBody');if(mb)mb.innerHTML='';
   if(tAF)cancelAnimationFrame(tAF);
   if(tR){tR.dispose();tR=null;}
+  autoEnterApp('admin');
 }
 
 // ===== 로그인 후 UI 셋업 =====
@@ -147,7 +120,6 @@ function nav(p){
 
 window.autoEnterApp=autoEnterApp;
 window.enterAsUser=enterAsUser;
-window.doLogin=doLogin;
 window.doLogout=doLogout;
 window.setup=setup;
 window.nav=nav;

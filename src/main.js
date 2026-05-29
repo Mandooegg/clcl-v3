@@ -11,15 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.lucide.createIcons();
   }
 
-  // Legacy Bridge: Auto-enter as admin for demo purposes
-  if (window.autoEnterApp && typeof window.autoEnterApp === 'function') {
-    try {
-      window.autoEnterApp('admin');
-    } catch (e) {
-      console.warn('Legacy autoEnterApp failed:', e);
-    }
-  }
-
   // Initialize Modules
   initRouter();
   initAuth();
