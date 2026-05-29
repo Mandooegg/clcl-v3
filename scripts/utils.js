@@ -103,7 +103,7 @@ function updBdg(){
   var d=window.gDB(),ss=gUS().map(function(s){return s.id;});
   var u=d.alerts.filter(function(a){return ss.indexOf(a.siteId)>=0&&!a.read;}).length;
   var b=document.getElementById('AB');
-  b.style.display=u>0?'inline':'none';b.textContent=u;
+  if(b){b.style.display=u>0?'inline':'none';b.textContent=u;}
 }
 
 // 현장 완료율 (%) 계산
