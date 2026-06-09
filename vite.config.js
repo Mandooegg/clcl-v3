@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: './',
+  base: '/clcl-v3/',
   build: {
     outDir: 'dist',
     emptyOutDir: true,

@@ -1,3 +1,8 @@
+import './styles/base.css';
+import './styles/layout.css';
+import './styles/components.css';
+import './styles/legacy-bridge.css';
+
 import { initRouter } from './js/router.js';
 import { initAuth } from './js/auth.js';
 import { initProjects } from './js/projects.js';
