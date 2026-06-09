@@ -1,5 +1,207 @@
 /* Legacy Bridge CSS - Adapted for Light Theme */
 
+/* ── 구 CSS 변수 → 새 라이트 테마 매핑 ── */
+:root {
+  --bg0: var(--bg-deep);
+  --bg1: var(--bg-main);
+  --bg2: var(--bg-elevated);
+  --bg3: var(--bg-surface);
+  --t1: var(--text-main);
+  --t2: var(--text-muted);
+  --t3: var(--text-dim);
+  --b1: var(--border);
+  --b2: var(--border-bright);
+  --blue: var(--secondary);
+  --cyan: var(--info);
+  --green: var(--success);
+  --amber: var(--accent);
+  --red: var(--danger);
+  --purple: #8b5cf6;
+  --r: var(--radius-lg);
+  --rs: var(--radius-md);
+}
+
+/* ── 구 통계 카드 (.sc, .sl, .sv, .ss) ── */
+.sc {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.sl { font-size: 10px; color: var(--text-dim); font-weight: 500; }
+.sv { font-size: 22px; font-weight: 900; margin: 4px 0 2px; color: var(--text-main); }
+.ss { font-size: 9px; color: var(--text-dim); }
+.sc.blue .sv  { color: var(--secondary); }
+.sc.green .sv { color: var(--success); }
+.sc.amber .sv { color: var(--accent); }
+.sc.red .sv   { color: var(--danger); }
+.sc.cyan .sv  { color: var(--info); }
+
+/* ── 구 카드 (.cd, .ct) ── */
+.cd {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.ct {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--text-main);
+}
+
+/* ── 구 그리드 (.gr, .g2, .g3, .g4) ── */
+.gr { display: grid; gap: 12px; }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+
+/* ── 구 진행바 (.pb, .pf) ── */
+.pb {
+  height: 5px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.pf { height: 100%; border-radius: var(--radius-full); background: var(--primary); }
+.pf.blue   { background: linear-gradient(90deg, var(--secondary), var(--info)); }
+.pf.green  { background: var(--success); }
+.pf.amber  { background: var(--accent); }
+.pf.red    { background: var(--danger); }
+
+/* ── 구 알림 카드 (.ac) ── */
+.ac {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--border-bright);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--bg-elevated);
+}
+.ac.urgent { border-left-color: var(--accent); }
+.ac.normal { border-left-color: var(--secondary); }
+
+/* ── 구 폼 (.fr, .fd) ── */
+.fr { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
+.fr.c3 { grid-template-columns: repeat(3, 1fr); }
+.fr.c1 { grid-template-columns: 1fr; }
+.fd label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+.fd input, .fd select, .fd textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.fd input:focus, .fd select:focus, .fd textarea:focus { border-color: var(--secondary); }
+
+/* ── 구 모달 (.mo, .md, .mh, .mx, .mb, .mf) ── */
+.mo { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; padding: 16px; }
+.mo.show { display: flex; }
+.md { background: var(--bg-main); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 600px; max-width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.mh { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.mh h3 { font-size: 14px; font-weight: 700; }
+.mx { width: 28px; height: 28px; border: none; background: var(--bg-elevated); color: var(--text-muted); border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.mb { padding: 16px; }
+.mf { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 6px; }
+
+/* ── 구 버튼 (.bs, .bo, .bg, .bd, .bpu, .bx) ── */
+.bs { padding: 7px 14px; font-size: 12px; }
+.bx { padding: 4px 9px; font-size: 11px; }
+.bo { background: transparent; border: 1px solid var(--border-bright); color: var(--text-muted); border-radius: var(--radius-md); cursor: pointer; }
+.bg { background: var(--success); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; }
+.bd { background: var(--danger); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; }
+.bpu { background: #8b5cf6; color: white; border: none; border-radius: var(--radius-md); cursor: pointer; }
+
+/* ── 구 수정이력 (.hi) ── */
+.hi {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.hi:last-child { border-bottom: none; }
+
+/* ── 구 건물 타입 선택 (.bts, .btc) ── */
+.bts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.btc { padding: 12px; border: 2px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; text-align: center; transition: var(--transition); }
+.btc:hover { background: var(--bg-elevated); }
+.btc.selected { border-color: var(--secondary); background: rgba(59, 130, 246, 0.06); }
+.btc .ti { font-size: 24px; margin-bottom: 4px; }
+.btc .tn { font-size: 11px; font-weight: 600; color: var(--text-main); }
+
+/* ── 구 검수 카드 (.ic) ── */
+.ic {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+/* ── 구 토스트 (.tc, .tt) ── */
+.tc { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; }
+.tt {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-md);
+  max-width: 320px;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.tt.success { border-left: 3px solid var(--success); }
+.tt.error   { border-left: 3px solid var(--danger); }
+.tt.warning { border-left: 3px solid var(--accent); }
+.tt.info    { border-left: 3px solid var(--secondary); }
+
+/* ── 구 상태 배지 (.st, .stc, .stp) ── */
+.st { display: inline-flex; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+.stc { background: rgba(16, 185, 129, 0.12); color: var(--success); }
+.stp { background: var(--bg-elevated); color: var(--text-dim); }
+
+/* ── 구 페이지 전환 (.pg) ── */
+.pg { display: none; }
+.pg.active { display: block; }
+
+/* ── 마스코트 ── */
+.mascot-float { position: fixed; bottom: 16px; left: 260px; z-index: 800; display: flex; align-items: flex-end; gap: 6px; pointer-events: none; transition: opacity 0.5s, transform 0.5s; }
+.mascot-float.hide { opacity: 0; transform: translateY(30px); }
+.mascot-bubble { background: var(--bg-main); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; font-size: 11px; box-shadow: var(--shadow-md); pointer-events: auto; max-width: 180px; }
+.mb-title { font-weight: 700; font-size: 10px; color: var(--primary); margin-bottom: 2px; }
+.mb-msg { color: var(--text-muted); }
+#mascotBody { pointer-events: auto; cursor: pointer; position: relative; transition: transform 0.15s; }
+#mascotBody:hover { transform: scale(1.15) rotate(-5deg); }
+
+/* ── 구 배지 (.badge) ── */
+.badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; }
+.badge-warning { background: rgba(245, 158, 11, 0.12); color: var(--accent); }
+.badge-danger  { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+.badge-success { background: rgba(16, 185, 129, 0.12); color: var(--success); }
+.badge-info    { background: rgba(6, 182, 212, 0.12); color: var(--info); }
+
 /* Tables */
 .tw {
   overflow-x: auto;
